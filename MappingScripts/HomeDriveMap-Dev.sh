@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=1.2
+version=1.3
 
 # Created by David Acland - Amsys
 # Updated by Jesse Harris - USC
@@ -50,7 +50,7 @@ logEntry "Group: $7"
 netbios="$8"
 logEntry "Netbios $8"
 # Check that the user is in the necessary group
-groupCheck=$(dseditgroup -o checkmember -n /Active\ Directory/"${netbios}"/All\ Domains -m "${username}" "${group}" | grep -c "yes")
+groupCheck=$(dseditgroup -o checkmember -n /Active\ Directory/"${netbios}"/All\ Domains -m "${username}" "${group}" | awk '{ print $1 }')
 if [ "${groupCheck}" != "yes" ]; then
     logEntry "${username} not a member of ${group}"
     exit 1
@@ -63,45 +63,53 @@ if ! test -r "${touchFile}"; then
         # root volume not mapped yet
         logEntry "Mapping root volume with applescript..."
         # This is first run, so we are going to mount the root and check if the folder exists.
-        mount_script=exists`/usr/bin/osascript > /dev/null << EOT
+        mount_script=$(/usr/bin/osascript > /dev/null << EOT
 tell application "Finder" 
 activate
 mount volume "${protocol}://${serverName}/${shareName}"
 end tell
-EOT`
-        fi
-# First checkingeck if it was succesfully mounted:
+EOT
+)
+    fi
+    # First check if it was succesfully mounted:
     # If sharename contains subdirs, then only the last one is used for the mounted volume
-    mountName=$(echo ${shareName##*/}) #bash string operators
-if  test -d "/Volumes/${mountName}"; then
+    mountName=$(echo ${shareName##*/}) #bash string operators to get the name after the last /
+    if test -d "/Volumes/${mountName}"; then
         logEntry "${shareName} mapping was succesfull"
-#was Create home directory if it doesn't exist
-        logEntry "Creating home directory ${shareName}/${username}"
-    test -d "/Volumeses/${mountName}/${username}" || mkdir "/Volumes/${mountName}/${username}"
-# Touch file to indicate this portion of the script has run once
-        logEntry "Marking home directory so that we don't run this whole process again"
-touch "${againtouchFile}"
-#       Now unmount the root volume
-umount "/Volumes/${mountName}"
+        # Create home directory if it doesn't exist
+        if test -d "/Volumes/${mountName}/${username}"; then
+            logEntry "Home directory for ${username} already exists on ${serverName}/${shareName}"
+        else
+            logEntry "No home for ${username} on ${serverName}/${shareName}. Creating..."
+            mkdir "/Volumes/${mountName}/${username}"
+        fi
+        # Touch file to indicate this portion of the script has run once
+        logEntry "Creating ${touchFile} to indicate this script has run"
+        touch "${touchFile}"
+        # Now unmount the root volume
+        logEntry "Unmounting ${mountName}"
+        umount "/Volumes/${mountName}"
+    else
+        logEntry "${shareName} did not mount. Abort."
+        exit 1
+    fi
 else
-logEntry "$else{shareName} did not mount. Abort."
-exit 1
-fi
-            else
-logEntry "logEntryFirst run has already been executed. Skipping..."
+    logEntry "First run has already been executed. Skipping..."
 fi
 
 # Test if home is already mounted
 if ! test -d "/Volumes/${username}"; then
-logEntry "${usernamesername} not mounted yet"
-# Mount the drive
-mountedunt_script=`/usr/bin/osascript > /dev/null << EOT
-tell applicationion "Finder" 
-applicationionctivate
-mount volumeolume "${protocol}://${serverName}/${shareName}/${username}"
-endd tell
-EOT`
+    logEntry "${username} not mounted yet. Mounting..."
+    # Mount the drive
+    mount_script=$(/usr/bin/osascript > /dev/null << EOT
+tell application "Finder" 
+activate
+mount volume "${protocol}://${serverName}/${shareName}/${username}"
+end tell
+EOT
+)
 else
-logEntry "${usernameername} already mounted"
+    logEntry "${username} already mounted"
 fi
+logEntry "Done"
 exit 0
