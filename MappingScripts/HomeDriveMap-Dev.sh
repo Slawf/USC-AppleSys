@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=1.1
+version=1.2
 
 # Created by David Acland - Amsys
 # Updated by Jesse Harris - USC
@@ -10,24 +10,32 @@ version=1.1
 # caused by this script.
 
 username="$3"
-if [ -z "${username}"  ]; then# Checks      if the variable is empty (user running script from Self Service)
-        username="${USER}"
+if [ -z "${username}" ]; then # Checks if the variable is empty (user running script from Self Service)
+    username="${USER}"
+fi
+
+logDir=/Users/"${username}"/Library/USC
+logFile="${logDir}"/Homemap.log
+touchFile="${logDir}"/HomeDriveMap
+
+if ! test -d "${logDir}"; then
+    mkdir "${logDir}"
+    chown "${username}" "${logDir}"
+fi
+
+function logEntry() {
+    if ! test -f "${logFile}"; then
+        sChown=1
     fi
 
-    logDir=/Users/"${username}"/Library/USC
-    logFile="${logDir}"/Homemap.log
-    touchFile="${logDir}"/HomeDriveMap
+    msg="$(date "+%d-%m-%y %H:%M"): $1"
+    echo $msg | tee -a "${logFile}"
+    if [ "${sChown}" == "1" ]; then
+        chown -R "${username}" "${logFile}"
+    fi
+}
 
-    if ! test -d "${logDir}"; then
-            mkdir "${logDir}"
-        fi
-
-        function logEntry() {
-            msg="$(date "+%d-%m-%y %H:%M"): $1"
-            echo $msg | tee -a "${logFile}"
-        }
-
-    logEntry "Starting homemap log version ${version}"
+logEntry "Starting homemap log version ${version}"
 
 
     logEntry "User: ${username}"
