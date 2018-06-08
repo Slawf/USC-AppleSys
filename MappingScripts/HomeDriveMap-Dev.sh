@@ -53,12 +53,7 @@ if ! ping -c 1 "${serverName}" > /dev/null 2>&1; then
     logEntry "No ping response from ${serverName}. Abort."
     exit 1
 fi
-# Check that the user is in the necessary group
-groupCheck=$(dseditgroup -o checkmember -n /Active\ Directory/"${netbios}"/All\ Domains -m "${username}" "${group}" | awk '{ print $1 }')
-if [ "${groupCheck}" != "yes" ]; then
-    logEntry "${username} not a member of ${group}"
-    exit 1
-fi
+
 # Check if this is first run:
 if ! test -r "${touchFile}"; then
     logEntry "First run, checking to create new home"
