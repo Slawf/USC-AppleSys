@@ -54,6 +54,12 @@ if ! ping -c 1 "${serverName}" > /dev/null 2>&1; then
     exit 1
 fi
 
+# Wait for Finder to launch.
+while ! pgrep -q -f Finder.app; do 
+    logEntry "Waiting for Finder"
+    sleep 10
+done
+
 # Check if this is first run:
 if ! test -r "${touchFile}"; then
     logEntry "First run, checking to create new home"
