@@ -1,6 +1,6 @@
 #!/bin/bash
 
-version=1.3
+version=1.4
 
 # Created by David Acland - Amsys
 # Updated by Jesse Harris - USC
@@ -37,7 +37,6 @@ function logEntry() {
 
 logEntry "Starting homemap log version ${version}"
 
-
 logEntry "User: ${username}"
 protocol="$4"	# This is the protocol to connect with (afp | smb)
 logEntry "Protocol: $4"
@@ -49,12 +48,18 @@ group="$7" # This is the name of the group the user needs to be a member of to m
 logEntry "Group: $7"
 netbios="$8"
 logEntry "Netbios $8"
-# Check that the user is in the necessary group
-groupCheck=$(dseditgroup -o checkmember -n /Active\ Directory/"${netbios}"/All\ Domains -m "${username}" "${group}" | awk '{ print $1 }')
-if [ "${groupCheck}" != "yes" ]; then
-    logEntry "${username} not a member of ${group}"
+# if we cannot ping the server, there is no sense continuing
+if ! ping -c 1 "${serverName}" > /dev/null 2>&1; then
+    logEntry "No ping response from ${serverName}. Abort."
     exit 1
 fi
+
+# Wait for Finder to launch.
+while ! pgrep -q -f Finder.app; do 
+    logEntry "Waiting for Finder"
+    sleep 10
+done
+
 # Check if this is first run:
 if ! test -r "${touchFile}"; then
     logEntry "First run, checking to create new home"
