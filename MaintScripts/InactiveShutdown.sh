@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -Eeuxo pipefail
+set -euo pipefail
 version=1.0
 
 # Updated by Jesse Harris - USC
@@ -9,24 +9,24 @@ version=1.0
 # no responsibility for loss or damage
 # caused by this script.
 
+inactiveTimer=${4:-1800} # Default 30 mins of idle
+enableLog="${5:-no}"
+enableShutdown="${6:-no}"
 logDir=/var/log
 logFile="${logDir}"/InactiveShutdown.log
 
+
 function logEntry() {
     msg="$(date "+%d-%m-%y %H:%M"): $1"
-    echo $msg | tee -a "${logFile}"
+    if [[ "${enableLog}" == "yes" ]]; then
+        echo "$msg" | tee -a "${logFile}"
+    else
+        echo "$msg"
+    fi
 }
 
 logEntry "Starting Inactive Shutdown log version ${version}"
-
-inactiveTimer="$4"	# This is the time in seconds to wait after a user has logged out
-if [ -z "${inactiveTimer}" ]; then
-    logEntry "inactiveTimer not specified, using default of 30 mins"
-    # default timeout is 30 mins
-    inactiveTimer=1800
-fi
-
-logEntry "InactiveTimer: $4"
+logEntry "InactiveTimer: $((inactiveTimer/60)) mins"
 
 # Check if any users are logged in:
 
@@ -39,7 +39,11 @@ else
     logEntry "User root is logged in."
     if [ "${idleTime}" -gt "${inactiveTimer}" ]; then
         logEntry "Idle time ${idleTime} has exceeded ${inactiveTimer}. Shutting down.."
-        shutdown -h +1
+        if [[ "${enableShutdown}" == "yes" ]]; then
+            shutdown -h +1
+        else
+            logEntry "Demo mode only, not shutting down"
+        fi
     else
         logEntry "Idle time ${idleTime} less then ${inactiveTimer}. Exiting.."
     fi
