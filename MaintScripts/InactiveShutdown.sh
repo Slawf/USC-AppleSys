@@ -30,7 +30,7 @@ logEntry "InactiveTimer: $((inactiveTimer/60)) mins"
 
 # Check if any users are logged in:
 
-idleTime=$(ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print int($NF/1000000000); exit}')
+idleTime=$(ioreg -c IOHIDSystem | awk '/HIDIdleTime/ {print int($NF/1000000000)}')
 loggedInUser=$(stat -f '%u %Su' /dev/console | awk '{print $2}')
 
 if [ "${loggedInUser}" != "root" ]; then
