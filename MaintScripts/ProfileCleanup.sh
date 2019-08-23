@@ -70,7 +70,7 @@ logEntry "There ${va} ${userCount// /} ${vb} found"
 function getmonthyear() {
     currentmonth=$(date "+%m")
     testmonth=$(date -j -f "%b" "$1" "+%m")
-    if [[ $currentmonth -ge $testmonth ]]; then
+    if [[ ${currentmonth#0} -ge ${testmonth#0} ]]; then
         year=$(date "+%Y")
     else
         year=$(date -j -v-1y "+%Y")
@@ -107,7 +107,7 @@ function getProfileAge() {
 for user in ${validUsers}; do
     page=$(getProfileAge "${user}")
     logEntry "User ${user} profile age is ${page}"
-    if [[ $page -gt $profileAge ]]; then
+    if [[ ${page#0} -gt ${profileAge#0} ]]; then
         logEntry "User profile has exceeded limits deleting"
         if [[ "${enableDelete}" == "yes" ]]; then
             dscl . delete /Users/"${user}"
